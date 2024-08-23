@@ -12,6 +12,10 @@
     "mealsData": {
       "type": "array",
       "default": []
+    },
+    "areas": {
+      "type": "array",
+      "default": []
     }
   },
   "supports": {

@@ -1,26 +1,44 @@
-import { store, getContext } from "@wordpress/interactivity";
+import { store } from "@wordpress/interactivity";
 
-store.meals = []; // Initialize the store with an empty array
+const { state, effects } = store("create-block", {
+  state: {
+    meals: [],
+    areas: [],
+  },
 
-getContext("create-block", (context) => {
-  // Define a callback to watch changes in the meals data
-  context.callbacks = {
-    logIsOpen: () => {
-      console.log("Meals data:", store.meals);
+  effects: {
+    fetchAreas: async () => {
+      try {
+        const response = await fetch(
+          "https://www.themealdb.com/api/json/v1/1/list.php?a=list"
+        );
+        const data = await response.json();
+        state.areas = data.meals.map((area) => area.strArea);
+      } catch (error) {
+        console.error("Error fetching areas:", error);
+      }
     },
-  };
+    fetchMeals: async (area) => {
+      try {
+        const response = await fetch(
+          `https://www.themealdb.com/api/json/v1/1/filter.php?a=${area}`
+        );
+        const data = await response.json();
+        state.meals = data.meals;
+      } catch (error) {
+        console.error("Error fetching meals data:", error);
+      }
+    },
+  },
+  callbacks: {
+    logMeals: () => {
+      console.log("Meals data:", state.meals);
+    },
+  },
+});
 
-  const fetchMeals = async () => {
-    try {
-      const response = await fetch(
-        "https://www.themealdb.com/api/json/v1/1/filter.php?a=Indian"
-      );
-      const data = await response.json();
-      store.meals = data.meals; // Update the store with fetched data
-    } catch (error) {
-      console.error("Error fetching meals data:", error);
-    }
-  };
-
-  fetchMeals();
+effects.fetchAreas().then(() => {
+  if (state.areas.length > 0) {
+    effects.fetchMeals(state.areas[0]); // Fetch meals for the first area initially
+  }
 });
